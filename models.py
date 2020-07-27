@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt 
 
 db = SQLAlchemy()
+bcrypt = Bcrypt()
 
 
 def connect_db(app):
@@ -37,8 +38,29 @@ class User(db.Model):
         else:
             return False
 
-    username = db.Column(db.Text(20),primary_key=True, unique=True)
-    password = db.Column(db.Text,nullable=False)
-    email = db.Column(db.Text(50),nullable = False, unique=True)
-    first_name = db.Column(db.Text(30), nullable=False)
-    last_name = db.Column(db.Text(30), nullable=False)
+    username = db.Column(db.String(20),primary_key=True, unique=True)
+    password = db.Column(db.String,nullable=False)
+    email = db.Column(db.String(50),nullable = False, unique=True)
+    first_name = db.Column(db.String(30), nullable=False)
+    last_name = db.Column(db.String(30), nullable=False)
+
+    feedback = db.relationship('Feedback',cascade="all, delete-orphan", backref="feed")
+
+class Feedback(db.Model):
+    """feedback model"""
+    __tablename__ = "feedback"
+
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    username = db.Column(db.String, db.ForeignKey('users.username'), nullable=False)
+
+
+
+# class User_feedback(db.Model):
+#     """feedback model"""
+#     __tablename__ = "user_feedback"
+
+#     feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'),nullable=False,primary_key=True)
+#     username = db.Column(db.String, db.ForeignKey('users.username'), nullable=False,primary_key=True)

@@ -1,11 +1,11 @@
-{% extends 'base.html' %}
+{% extends 'base.html'%}
 
 {% block main %}
 <div class="container m-3 col-4 mx-auto">
-    <form action='/login' method="POST">
-        {{ login_form.hidden_tag() }} 
+    <form action='/feedback/{{feedback_id}}/update' method="POST">
+        {{ give_feedback.hidden_tag() }} 
     
-        {% for field in login_form
+        {% for field in give_feedback
                if field.widget.input_type != 'hidden' %}
       
           <div class="form-group">

@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from app import app
-from models import db,
+from models import db, User, Feedback
 
 # Use test database and don't clutter tests with SQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///feedback_test'
@@ -14,123 +14,159 @@ db.drop_all()
 db.create_all()
 
 
-CUPCAKE_DATA = {
-    "flavor": "TestFlavor",
-    "size": "TestSize",
-    "rating": 5,
-    "image": "http://test.com/cupcake.jpg"
+userdata = {
+    "username": "testuser",
+    "password": "password",
+    "email": "email@test.com",
+    "first_name": "first",
+    "last_name":"last"
 }
 
-CUPCAKE_DATA_2 = {
-    "flavor": "TestFlavor2",
-    "size": "TestSize2",
-    "rating": 10,
-    "image": "http://test.com/cupcake2.jpg"
+feedbackdata = {
+    "title": "title",
+    "content": "content",
+    "username": "username"
 }
 
 
-class CupcakeViewsTestCase(TestCase):
+class FeedbackTests(TestCase):
     """Tests for views of API."""
 
     def setUp(self):
         """Make demo data."""
 
-        Cupcake.query.delete()
+        Feedback.query.delete()
+        User.query.delete()
 
-        cupcake = Cupcake(**CUPCAKE_DATA)
-        db.session.add(cupcake)
+
+        user = User(username='testuser',password='password',email='email@test.com',first_name='first',last_name='last')
+        db.session.add(user)
         db.session.commit()
+        feedback = Feedback(title="title", content="content", username=user.username)
+        db.session.add(feedback)
+        db.session.commit()
+        
+        self.username = user.username
+        self.feedback_id = feedback.id
 
-        self.cupcake = cupcake
 
     def tearDown(self):
         """Clean up fouled transactions."""
 
         db.session.rollback()
 
-    def test_list_cupcakes(self):
+
+
+    def test_feedback(self):
         with app.test_client() as client:
-            resp = client.get("/api/cupcakes")
-
-            self.assertEqual(resp.status_code, 200)
-
-            data = resp.json
-            self.assertEqual(data, {
-                "cupcakes": [
-                    {
-                        "id": self.cupcake.id,
-                        "flavor": "TestFlavor",
-                        "size": "TestSize",
-                        "rating": 5,
-                        "image": "http://test.com/cupcake.jpg"
-                    }
-                ]
-            })
-
-    def test_get_cupcake(self):
-        with app.test_client() as client:
-            url = f"/api/cupcakes/{self.cupcake.id}"
+            url = "/feedback"
             resp = client.get(url)
 
             self.assertEqual(resp.status_code, 200)
-            data = resp.json
-            self.assertEqual(data, {
-                "cupcake": {
-                    "id": self.cupcake.id,
-                    "flavor": "TestFlavor",
-                    "size": "TestSize",
-                    "rating": 5,
-                    "image": "http://test.com/cupcake.jpg"
-                }
-            })
 
-    def test_create_cupcake(self):
+
+    def test_user_feedback(self):
         with app.test_client() as client:
-            url = "/api/cupcakes"
-            resp = client.post(url, json=CUPCAKE_DATA_2)
-
-            self.assertEqual(resp.status_code, 201)
-
-            data = resp.json
-
-            # don't know what ID we'll get, make sure it's an int & normalize
-            self.assertIsInstance(data['cupcake']['id'], int)
-            del data['cupcake']['id']
-
-            self.assertEqual(data, {
-                "cupcake": {
-                    "flavor": "TestFlavor2",
-                    "size": "TestSize2",
-                    "rating": 10,
-                    "image": "http://test.com/cupcake2.jpg"
-                }
-            })
-
-            self.assertEqual(Cupcake.query.count(), 2)
-    
-    
-    def test_update_cupcake(self):
-        with app.test_client() as client:
-            url = f"/api/cupcakes/{self.cupcake.id}"
-            resp = client.patch(url, json=CUPCAKE_DATA_2)
+            url = f"/feedback/{self.username}"
+            resp = client.get(url)
 
             self.assertEqual(resp.status_code, 200)
-            data = resp.json
-            self.assertEqual(data, {
-                "cupcake": {
-                    "id": self.cupcake.id,
-                    "flavor": "TestFlavor2",
-                    "size": "TestSize2",
-                    "rating": 10,
-                    "image": "http://test.com/cupcake2.jpg"
-                }
-            })
-
-    def test_delete_cupcake(self):
+    
+    
+    def test_get_username(self):
         with app.test_client() as client:
-            url = f"/api/cupcakes/{self.cupcake.id}"
-            resp = client.delete(url)
+            with client.session_transaction() as lSess:
+                lSess['username'] = 'testuser'
+            url = "/user"
+            resp = client.get(url)
 
             self.assertEqual(resp.status_code, 200)
-            data = resp.json
-            self.assertEqual(data, {'msg': {'message': 'Deleted'}})
+
+
+    def test_register_page(self):
+        with app.test_client() as client:
+            url = "/register"
+            resp = client.get(url)
+
+            self.assertEqual(resp.status_code, 200)
+
+    def test_register(self):
+        with app.test_client() as client:
+            url = "/register"
+            resp = client.post(url, data=dict(
+            username='user2',
+            password='password2',
+            email='email2@test.com',
+            first_name='firstish',
+            last_name='lastish'
+            ))
+
+            self.assertEqual(resp.status_code, 200)
+
+    def test_login_page(self):
+        with app.test_client() as client:
+            url = "/login"
+            resp = client.get(url)
+
+            self.assertEqual(resp.status_code, 200)
+
+    def test_login(self):
+        with app.test_client() as client:
+            url = "/login"
+            resp = client.get(url)
+
+            self.assertEqual(resp.status_code, 200)
+
+    def test_secret_page(self):
+        with app.test_client() as client:
+            with client.session_transaction() as session:
+                session['username'] = 'testuser'
+            url = f"/users/{self.username}"
+            resp = client.get(url)
+
+            self.assertEqual(resp.status_code, 200)
+
+    def test_delete_user(self):
+        with app.test_client() as client:
+            with client.session_transaction() as lSess:
+                lSess['username'] = 'testuser'
+            url = f"/users/{self.username}/delete"
+            resp = client.get(url)
+
+            self.assertEqual(resp.status_code, 200)
+        
+    def test_give_feedback(self):
+        with app.test_client() as client:
+            with client.session_transaction() as lSess:
+                lSess['username'] = 'testuser'
+            url = f"/users/{self.username}/feedback/add"
+            resp = client.post(url, json=feedbackdata)
+
+            self.assertEqual(resp.status_code, 200)
+
+    def test_update_feedback(self):
+        with app.test_client() as client:
+            with client.session_transaction() as lSess:
+                lSess['username'] = 'testuser'
+            url = f"/feedback/{self.feedback_id}/update"
+            resp = client.post(url, json=feedbackdata)
+
+            self.assertEqual(resp.status_code, 200)
+
+    def test_logout(self):
+        with app.test_client() as client:
+            with client.session_transaction() as lSess:
+                lSess['username'] = 'testuser'
+            url = "/logout"
+            resp = client.get(url)
+
+            self.assertEqual(resp.status_code, 200)
+
+    def test_delete_feedback(self):
+        with app.test_client() as client:
+            with client.session_transaction() as lSess:
+                lSess['username'] = 'testuser'
+            url = f"/feedback/{self.feedback_id}/delete"
+            resp = client.post(url)
+
+            self.assertEqual(resp.status_code, 200)

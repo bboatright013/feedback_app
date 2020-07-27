@@ -1,0 +1,9 @@
+{%extends 'base.html'%}
+
+{%block main%}
+<form action='/users/{{user.username}}/delete' method="POST">
+<p>Are you sure you want to delete your account?</p>
+<button type="submit">YES</button>
+</form>
+<a href="/users/{{user.username}}">oops, no thanks</a>
+{% endblock %}

@@ -2,24 +2,27 @@
 
 
 {% block main %}
-
-<form action='/register' method="POST">
-    {{ form.hidden_tag() }} 
-
-    {% for field in form
-           if field.widget.input_type != 'hidden' %}
-  
-      <div class="form-group">
-        {{ field.label }}
-        {{ field }}
-  
-        {% for error in field.errors %}
-          {{ error }}
+<div class="container m-3 col-4 mx-auto">
+    <form action='/register' method="POST">
+        {{ register_form.hidden_tag() }} 
+    
+        {% for field in register_form
+               if field.widget.input_type != 'hidden' %}
+      
+          <div class="form-group">
+           <div> {{ field.label }} {{ field(class_="form-control") }}</div> 
+        
+      
+            {% for error in field.errors %}
+              {{ error }}
+            {% endfor %}
+          </div>
+      
         {% endfor %}
-      </div>
-  
-    {% endfor %}
-    <button type="submit" class="btn btn-primary">Submit</button>
-</form>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+</div>
+
 
 {% endblock %}
